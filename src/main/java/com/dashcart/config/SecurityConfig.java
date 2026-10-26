@@ -33,6 +33,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health/**").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
                         // Browsing (pincode check, categories, a store's products) works without login.
                         .requestMatchers(HttpMethod.GET, "/stores/**", "/categories").permitAll()

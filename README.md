@@ -58,9 +58,9 @@ docker-compose.yml local MySQL + Redis
 - [x] Stores and pincode lookup
 - [x] Catalogue and per-store inventory (+ demo data: 3 Bengaluru stores, 30 products)
 - [x] Cart (one store per cart, stock check on add, per-item limit)
-- [ ] Checkout with the four reservation strategies
+- [x] Checkout with five stock-reservation strategies (naive, optimistic, pessimistic, conditional update, Redis Lua)
 - [ ] Razorpay payment and webhook
-- [ ] Reservation expiry job
+- [x] Order lifecycle: cancel, 10-minute reservation expiry job, admin fulfilment steps
 - [ ] Redis catalogue cache
 - [ ] Load tests (k6) and benchmark results
 - [ ] Kafka order events
