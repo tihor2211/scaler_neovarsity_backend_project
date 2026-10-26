@@ -1,0 +1,20 @@
+{
+  "strategy": "REDIS",
+  "buyers": 500,
+  "stock": 100,
+  "created": 100,
+  "rejected": 400,
+  "failed": 0,
+  "oversold": 0,
+  "finalAvailable": 0,
+  "finalReserved": 100,
+  "latencyMs": {
+    "min": 79.326,
+    "median": 419.25350000000003,
+    "p90": 507.3613,
+    "p95": 520.87855,
+    "p99": 565.85434,
+    "max": 575.7
+  },
+  "requestsPerSec": 868.507903421921
+}

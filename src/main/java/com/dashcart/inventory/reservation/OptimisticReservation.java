@@ -13,14 +13,21 @@ import org.springframework.stereotype.Component;
 class OptimisticReservation implements StockReservationStrategy {
 
     private final JdbcTemplate jdbc;
+    private final StockPrecheck precheck;
 
-    OptimisticReservation(JdbcTemplate jdbc) {
+    OptimisticReservation(JdbcTemplate jdbc, StockPrecheck precheck) {
         this.jdbc = jdbc;
+        this.precheck = precheck;
     }
 
     @Override
     public ReservationStrategyType type() {
         return ReservationStrategyType.OPTIMISTIC;
+    }
+
+    @Override
+    public void precheck(long storeId, List<StockRequest> items) {
+        precheck.requireAvailable(storeId, items);
     }
 
     @Override

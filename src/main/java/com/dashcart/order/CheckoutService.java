@@ -30,9 +30,9 @@ import com.dashcart.store.StoreService;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
-// Turns the customer's cart into an order. In one transaction: check the cart and pincode, reserve stock
-// with the active strategy, create the order and its items, empty the cart. If anything fails, the whole
-// transaction rolls back and nothing is reserved.
+// Turns the customer's cart into an order. In one transaction: check the cart and pincode, run the
+// strategy's early stock check, create the order and its items, empty the cart, and reserve the stock last.
+// If anything fails, the whole transaction rolls back and nothing is reserved.
 @Service
 public class CheckoutService {
 
@@ -117,15 +117,20 @@ public class CheckoutService {
                 .map(line -> new StockRequest(line.productId(), line.quantity(), line.name()))
                 .sorted(Comparator.comparing(StockRequest::productId))
                 .toList();
-        strategy.reserve(storeId, items);
+
+        // "Lock late": cheap early rejection first, then the order rows, and the stock-row lock last so
+        // it's held only until the commit that follows (see StockReservationStrategy).
+        strategy.precheck(storeId, items);
 
         BigDecimal total = lines.stream().map(CartLine::lineTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         CustomerOrder order = orders.save(new CustomerOrder(userId, storeId, total, request.deliveryAddress().trim(),
                 request.deliveryPincode(), strategy.type(), Instant.now().plus(reservationTtl)));
-        orderItems.saveAll(lines.stream()
+        orderItems.saveAllAndFlush(lines.stream()
                 .map(line -> new OrderItem(order.getId(), line.productId(), line.quantity(), line.price()))
                 .toList());
         cartItems.deleteAllInCart(cart.getId());
+
+        strategy.reserve(storeId, items);
         return order.getId();
     }
 

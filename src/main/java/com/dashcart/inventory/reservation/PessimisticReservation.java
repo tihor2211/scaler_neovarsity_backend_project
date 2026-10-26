@@ -13,14 +13,21 @@ import org.springframework.stereotype.Component;
 class PessimisticReservation implements StockReservationStrategy {
 
     private final JdbcTemplate jdbc;
+    private final StockPrecheck precheck;
 
-    PessimisticReservation(JdbcTemplate jdbc) {
+    PessimisticReservation(JdbcTemplate jdbc, StockPrecheck precheck) {
         this.jdbc = jdbc;
+        this.precheck = precheck;
     }
 
     @Override
     public ReservationStrategyType type() {
         return ReservationStrategyType.PESSIMISTIC;
+    }
+
+    @Override
+    public void precheck(long storeId, List<StockRequest> items) {
+        precheck.requireAvailable(storeId, items);
     }
 
     @Override

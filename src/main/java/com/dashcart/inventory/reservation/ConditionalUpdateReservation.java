@@ -13,14 +13,21 @@ import org.springframework.stereotype.Component;
 class ConditionalUpdateReservation implements StockReservationStrategy {
 
     private final JdbcTemplate jdbc;
+    private final StockPrecheck precheck;
 
-    ConditionalUpdateReservation(JdbcTemplate jdbc) {
+    ConditionalUpdateReservation(JdbcTemplate jdbc, StockPrecheck precheck) {
         this.jdbc = jdbc;
+        this.precheck = precheck;
     }
 
     @Override
     public ReservationStrategyType type() {
         return ReservationStrategyType.CONDITIONAL_UPDATE;
+    }
+
+    @Override
+    public void precheck(long storeId, List<StockRequest> items) {
+        precheck.requireAvailable(storeId, items);
     }
 
     @Override

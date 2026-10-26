@@ -22,6 +22,11 @@ class NaiveReservation implements StockReservationStrategy {
         return ReservationStrategyType.NAIVE;
     }
 
+    // The baseline does all its work in reserve.
+    @Override
+    public void precheck(long storeId, List<StockRequest> items) {
+    }
+
     @Override
     public void reserve(long storeId, List<StockRequest> items) {
         for (StockRequest item : items) {

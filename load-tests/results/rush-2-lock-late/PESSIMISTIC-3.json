@@ -1,0 +1,20 @@
+{
+  "strategy": "PESSIMISTIC",
+  "buyers": 500,
+  "stock": 100,
+  "created": 100,
+  "rejected": 400,
+  "failed": 0,
+  "oversold": 0,
+  "finalAvailable": 0,
+  "finalReserved": 100,
+  "latencyMs": {
+    "min": 72.403,
+    "median": 398.7395,
+    "p90": 480.50050000000005,
+    "p95": 488.64005,
+    "p99": 492.67258,
+    "max": 520.964
+  },
+  "requestsPerSec": 959.759215607988
+}
