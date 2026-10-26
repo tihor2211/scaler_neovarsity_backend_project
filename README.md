@@ -55,8 +55,8 @@ docker-compose.yml local MySQL + Redis
 
 - [x] Project skeleton, Docker Compose, database schema (Flyway V1)
 - [x] Auth (register / login / logout, JWT with jjwt, Redis deny-list)
-- [ ] Stores and pincode lookup
-- [ ] Catalogue and per-store inventory
+- [x] Stores and pincode lookup
+- [x] Catalogue and per-store inventory (+ demo data: 3 Bengaluru stores, 30 products)
 - [ ] Cart
 - [ ] Checkout with the four reservation strategies
 - [ ] Razorpay payment and webhook

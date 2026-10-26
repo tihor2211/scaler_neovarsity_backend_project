@@ -9,28 +9,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
 
-import com.dashcart.TestcontainersConfiguration;
+import com.dashcart.support.IntegrationTest;
+import com.dashcart.support.TestApi;
 import com.jayway.jsonpath.JsonPath;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@Import(TestcontainersConfiguration.class)
-@TestPropertySource(properties = {
-        "dashcart.admin.email=admin@test.local",
-        "dashcart.admin.password=admin-password-123"
-})
-class AuthFlowIntegrationTest {
-
-    @Autowired
-    MockMvc mvc;
+class AuthFlowIntegrationTest extends IntegrationTest {
 
     @Test
     void registerLoginMeLogout() throws Exception {
@@ -91,7 +76,7 @@ class AuthFlowIntegrationTest {
 
     @Test
     void adminIsSeededAndOnlyAdminsReachAdminPaths() throws Exception {
-        String adminToken = login("admin@test.local", "admin-password-123");
+        String adminToken = login(TestApi.ADMIN_EMAIL, TestApi.ADMIN_PASSWORD);
         mvc.perform(get("/users/me").header("Authorization", "Bearer " + adminToken))
                 .andExpect(jsonPath("$.role", is("ADMIN")));
 
