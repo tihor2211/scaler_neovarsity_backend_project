@@ -1,0 +1,20 @@
+{
+  "strategy": "CONDITIONAL_UPDATE",
+  "buyers": 500,
+  "stock": 100,
+  "created": 100,
+  "rejected": 400,
+  "failed": 0,
+  "oversold": 0,
+  "finalAvailable": 0,
+  "finalReserved": 100,
+  "latencyMs": {
+    "min": 40.256,
+    "median": 464.48299999999995,
+    "p90": 635.2779,
+    "p95": 652.67085,
+    "p99": 674.32285,
+    "max": 675.399
+  },
+  "requestsPerSec": 740.3031393294926
+}

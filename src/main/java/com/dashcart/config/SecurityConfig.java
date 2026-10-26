@@ -1,6 +1,5 @@
 package com.dashcart.config;
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,13 +14,11 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.dashcart.auth.JwtAuthenticationFilter;
-import com.dashcart.auth.JwtProperties;
 
 import jakarta.servlet.http.HttpServletResponse;
 
 // Stateless JWT security: no sessions, no CSRF (no cookies), every request carries its own token.
 @Configuration
-@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
     @Bean
@@ -37,6 +34,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
                         // Browsing (pincode check, categories, a store's products) works without login.
                         .requestMatchers(HttpMethod.GET, "/stores/**", "/categories").permitAll()
+                        // Razorpay calls this; it's authenticated by its HMAC signature instead of a JWT.
+                        .requestMatchers(HttpMethod.POST, "/payments/razorpay/webhook").permitAll()
+                        // Demo payment page (static HTML); its API calls carry the customer's JWT.
+                        .requestMatchers(HttpMethod.GET, "/pay.html").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(errors -> errors

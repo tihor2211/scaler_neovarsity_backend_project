@@ -95,14 +95,15 @@ public class OrderService {
         orders.transition(orderId, EnumSet.of(OrderStatus.CREATED), OrderStatus.PAYMENT_PENDING, Instant.now());
     }
 
-    // Payment captured: reserved units become sold. Returns false if the order had already expired or been
-    // cancelled (the stock was released, so the payment must be refunded instead).
+    // Payment captured: reserved units become sold. Returns false if this payment didn't make the order
+    // PAID: it had expired or been cancelled (stock already released), or another payment already paid it.
+    // Either way the money has to be refunded.
     @Transactional
     public boolean markPaid(Long orderId) {
         CustomerOrder order = orders.findById(orderId)
                 .orElseThrow(() -> ApiException.notFound("Order " + orderId + " not found"));
         if (orders.transition(orderId, OrderStatus.HOLDING_STOCK, OrderStatus.PAID, Instant.now()) == 0) {
-            return order.getStatus() == OrderStatus.PAID;
+            return false;
         }
         ledger.confirm(order.getStoreId(), stockOf(orderId));
         return true;

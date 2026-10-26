@@ -1,0 +1,20 @@
+{
+  "strategy": "NAIVE",
+  "buyers": 500,
+  "stock": 100,
+  "created": 500,
+  "rejected": 0,
+  "failed": 0,
+  "oversold": 400,
+  "finalAvailable": 44,
+  "finalReserved": 500,
+  "latencyMs": {
+    "min": 74.595,
+    "median": 1050.8995,
+    "p90": 1564.1356,
+    "p95": 1594.2393,
+    "p99": 1617.93234,
+    "max": 1652.881
+  },
+  "requestsPerSec": 302.5021160023014
+}

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DashCart – pay for an order (demo)</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 34rem; margin: 2rem auto; padding: 0 1rem; color: #1f2933; }
+    h1 { font-size: 1.4rem; }
+    label { display: block; margin-top: .8rem; font-weight: 600; }
+    input { width: 100%; padding: .5rem; margin-top: .25rem; box-sizing: border-box; }
+    button { margin-top: 1rem; padding: .6rem 1.2rem; background: #0c831f; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+    pre { background: #f4f5f7; padding: .8rem; overflow-x: auto; white-space: pre-wrap; }
+    .note { color: #52606d; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <h1>DashCart – pay for an order</h1>
+  <p class="note">Demo page for the Razorpay test-mode flow. Log in as the customer who placed the order,
+    enter the order id and pay with a Razorpay test card or test UPI id.</p>
+
+  <label>Email <input id="email" type="email" autocomplete="username"></label>
+  <label>Password <input id="password" type="password" autocomplete="current-password"></label>
+  <label>Order id <input id="orderId" type="number" min="1"></label>
+  <button id="pay">Pay with Razorpay</button>
+
+  <h2>Result</h2>
+  <pre id="out">–</pre>
+
+  <script>
+    const out = document.getElementById('out');
+    const show = (label, value) => { out.textContent = label + '\n' + JSON.stringify(value, null, 2); };
+
+    async function api(path, token, body) {
+      const res = await fetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+        body: body ? JSON.stringify(body) : null,
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw json;
+      return json;
+    }
+
+    document.getElementById('pay').addEventListener('click', async () => {
+      try {
+        const login = await api('/auth/login', null, {
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value,
+        });
+        const orderId = document.getElementById('orderId').value;
+        const start = await api(`/orders/${orderId}/payment`, login.accessToken);
+        show('Razorpay order created, opening checkout…', start);
+
+        new Razorpay({
+          key: start.razorpayKeyId,
+          amount: start.amountPaise,
+          currency: start.currency,
+          order_id: start.razorpayOrderId,
+          name: 'DashCart',
+          description: `Order #${orderId}`,
+          handler: async (response) => {
+            try {
+              const payment = await api('/payments/razorpay/verify', login.accessToken, {
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              });
+              show('Payment verified by the backend', payment);
+            } catch (e) { show('Verification failed', e); }
+          },
+          modal: { ondismiss: () => show('Checkout closed without paying', start) },
+        }).open();
+      } catch (e) {
+        show('Error', e);
+      }
+    });
+  </script>
+</body>
+</html>

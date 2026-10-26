@@ -21,6 +21,8 @@ public class TestApi {
 
     public static final String ADMIN_EMAIL = "admin@test.local";
     public static final String ADMIN_PASSWORD = "admin-password-123";
+    public static final String RAZORPAY_KEY_SECRET = "test-key-secret";
+    public static final String RAZORPAY_WEBHOOK_SECRET = "test-webhook-secret";
 
     private final MockMvc mvc;
 
