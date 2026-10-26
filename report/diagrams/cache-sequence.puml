@@ -1,0 +1,33 @@
+@startuml cache-sequence
+!include style.iuml
+hide footbox
+
+actor Customer
+participant "CatalogService\n@Cacheable" as CS
+database "Redis" as R
+database "MySQL" as DB
+participant "InventoryService" as IS
+actor "Store admin" as Admin
+
+Customer -> CS : GET /stores/2/products?categoryId=3
+CS -> R : GET cache:storeProducts::2:3:null:0:20
+alt cache hit
+  R --> CS : serialised page
+else cache miss
+  CS -> DB : listing query\n(products joined with store_inventory)
+  DB --> CS : page of rows
+  CS -> R : SET key, expires in 30 s
+end
+CS --> Customer : 200 page of products
+
+== Admin changes stock ==
+Admin -> IS : PUT /admin/stores/2/inventory
+IS -> DB : UPDATE store_inventory
+IS -> IS : register after-commit hook
+IS -> DB : COMMIT
+IS -> R : after commit: Cache.invalidate("storeProducts")\nremoves every cached listing at once
+note right of R
+  Invalidating after the commit means a request racing
+  the change can't re-cache the old rows.
+end note
+@enduml

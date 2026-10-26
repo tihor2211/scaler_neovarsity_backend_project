@@ -1,0 +1,57 @@
+@startuml security-classes
+!include style.iuml
+skinparam nodesep 22
+skinparam ranksep 40
+
+class SecurityConfig <<Configuration>> {
+  +securityFilterChain(http, jwtFilter)
+  +passwordEncoder(): BCrypt
+}
+abstract class OncePerRequestFilter
+class JwtAuthenticationFilter <<Component>> {
+  #doFilterInternal(req, res, chain)
+}
+class JwtService <<Service>> {
+  -key: SecretKey (HS256)
+  +issue(User): IssuedToken
+  +verify(token): Optional<VerifiedToken>
+}
+class JwtProperties <<record>> {
+  secret: String
+  ttl: Duration
+}
+class TokenDenylist <<Component>> {
+  +deny(tokenId, expiresAt)
+  +isDenied(tokenId): boolean
+}
+class AuthController <<RestController>> {
+  +register / +login / +logout / +me
+}
+class AuthService <<Service>> {
+  +register(request): UserResponse
+  +login(request): LoginResponse
+  +logout(token)
+}
+class AdminSeeder <<ApplicationRunner>> {
+  +run(args)
+}
+interface UserRepository {
+  +findByEmail(email)
+  +existsByEmail(email)
+}
+class AuthUser <<record>> {
+  id, email, role
+}
+
+SecurityConfig --> JwtAuthenticationFilter : registers
+OncePerRequestFilter <|-- JwtAuthenticationFilter
+JwtAuthenticationFilter --> JwtService
+JwtAuthenticationFilter --> TokenDenylist
+JwtService --> JwtProperties
+JwtService ..> AuthUser : creates
+AuthController --> AuthService
+AuthService --> JwtService
+AuthService --> TokenDenylist
+AuthService --> UserRepository
+AdminSeeder --> UserRepository
+@enduml

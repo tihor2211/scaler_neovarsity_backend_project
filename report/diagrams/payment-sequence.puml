@@ -1,0 +1,36 @@
+@startuml payment-sequence
+!include style.iuml
+hide footbox
+autonumber
+
+actor "Customer\napp" as App
+participant "DashCart API" as API
+database "MySQL" as DB
+participant "Razorpay" as RZP
+
+App -> API : POST /orders/{id}/payment
+API -> DB : order still holding stock\nand not expired?
+API -> RZP : POST /v1/orders (amount in paise,\nreceipt), Basic auth key id : secret
+RZP --> API : order_id
+API -> DB : INSERT payments (CREATED);\norder → PAYMENT_PENDING
+API --> App : 201 (razorpayOrderId, amount, keyId, payBefore)
+App -> RZP : Razorpay Checkout: customer pays (UPI / card)
+RZP --> App : payment_id, signature
+par browser confirms
+  App -> API : POST /payments/razorpay/verify
+  API -> DB : SELECT payment ... FOR UPDATE
+  API -> API : HMAC-SHA256(order_id | payment_id,\nkey secret) == signature ?
+  API -> DB : capture: order → PAID (conditional),\nconfirm stock, payment CAPTURED
+  API --> App : 200 (payment CAPTURED)
+else Razorpay confirms
+  RZP -> API : POST /payments/razorpay/webhook\n(payment.captured, signed raw body)
+  API -> API : HMAC-SHA256(raw body,\nwebhook secret) == signature ?
+  API -> DB : INSERT webhook_events (provider, event_id)\nduplicate event id → ignored
+  API -> DB : SELECT payment ... FOR UPDATE;\ncapture (no-op if already CAPTURED)
+  API --> RZP : 200 OK
+end
+note over API, DB
+  Whichever arrives first captures the payment; the second finds it CAPTURED and does nothing.
+  If the order expired first, the payment becomes REFUND_REQUIRED instead.
+end note
+@enduml

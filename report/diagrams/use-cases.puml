@@ -1,0 +1,35 @@
+@startuml use-cases
+!include style.iuml
+left to right direction
+skinparam nodesep 14
+skinparam ranksep 70
+
+actor Customer as C
+
+rectangle "DashCart backend: shopping" {
+  usecase "Register, log in, log out" as UC1
+  usecase "Check pincode serviceability" as UC2
+  usecase "Browse store catalogue" as UC3
+  usecase "Manage cart" as UC4
+  usecase "Check out" as UC5
+  usecase "Pay for order" as UC6
+  usecase "Cancel unpaid order" as UC7
+  usecase "View orders" as UC8
+  usecase "View notifications" as UC9
+  usecase "Reserve stock\n(all or nothing)" as UC5a
+  usecase "Verify payment\nsignature" as UC6a
+}
+
+C --> UC1
+C --> UC2
+C --> UC3
+C --> UC4
+C --> UC5
+C --> UC6
+C --> UC7
+C --> UC8
+C --> UC9
+UC5 ..> UC5a : <<include>>
+UC6 ..> UC6a : <<include>>
+UC7 ..> UC5a : releases
+@enduml

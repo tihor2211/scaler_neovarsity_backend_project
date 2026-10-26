@@ -1,0 +1,41 @@
+@startuml architecture
+!include style.iuml
+skinparam nodesep 25
+skinparam ranksep 45
+
+actor "Customer\n(mobile / web app)" as customer
+actor "Store admin" as admin
+cloud "Razorpay\n(Orders API, Checkout,\nwebhooks)" as razorpay
+
+rectangle "DashCart API  (Spring Boot 4, Java 21, one deployable)" as api {
+  component "Spring Security\nJWT filter" as jwt
+  component "REST controllers\n(33 endpoints)" as controllers
+  component "Services\ncart, checkout, orders,\npayments, catalogue" as services
+  component "Stock reservation\nstrategies (5)" as strategies
+  component "Expiry job\nevery 30 s" as expiry
+  component "Order event\npublisher" as publisher
+  component "Notification\nconsumer" as consumer
+}
+
+database "MySQL 8.4\nsystem of record" as mysql
+database "Redis 7.4\ncache, logout deny-list,\nstock counters" as redis
+queue "Kafka\norder-events topic" as kafka
+
+customer --> jwt : HTTPS + JWT
+admin --> jwt : HTTPS + JWT\n(ADMIN role)
+customer ..> razorpay : pays in\nCheckout
+jwt --> controllers
+controllers --> services
+expiry --> services
+services --> strategies
+services --> publisher : after\ncommit
+services -up-> razorpay : create order
+razorpay --> controllers : signed\nwebhook
+services --> mysql : JPA / JDBC
+strategies --> mysql : stock rows
+strategies ..> redis : Lua\n(REDIS only)
+services ..> redis : listing cache
+publisher --> kafka
+kafka --> consumer
+consumer --> mysql : notifications
+@enduml

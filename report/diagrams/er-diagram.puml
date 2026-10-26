@@ -1,0 +1,130 @@
+@startuml er-diagram
+!include style.iuml
+hide empty members
+skinparam linetype ortho
+skinparam nodesep 35
+skinparam ranksep 55
+skinparam EntityBackgroundColor #F7F7F7
+skinparam EntityBorderColor #444444
+
+entity users {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100)
+  * email : VARCHAR(255) <<UK>>
+  phone : VARCHAR(15)
+  * password_hash : VARCHAR(100)
+  * role : VARCHAR(20)
+}
+entity stores {
+  * id : BIGINT <<PK>>
+  --
+  * name, address : VARCHAR
+  * latitude, longitude : DECIMAL(9,6)
+  * active : BOOLEAN
+}
+entity serviceable_pincodes {
+  * pincode : CHAR(6) <<PK>>
+  --
+  * store_id : BIGINT <<FK>>
+}
+entity categories {
+  * id : BIGINT <<PK>>
+  --
+  * name : VARCHAR(100) <<UK>>
+}
+entity products {
+  * id : BIGINT <<PK>>
+  --
+  * category_id : BIGINT <<FK>>
+  * name : VARCHAR(200)
+  description : TEXT
+  * unit : VARCHAR(30)
+  * mrp, price : DECIMAL(10,2)
+  image_url : VARCHAR(500)
+  * active : BOOLEAN
+}
+entity store_inventory {
+  * store_id : BIGINT <<PK, FK>>
+  * product_id : BIGINT <<PK, FK>>
+  --
+  * available_qty : INT  (>= 0)
+  * reserved_qty : INT  (>= 0)
+  * version : BIGINT
+}
+entity carts {
+  * id : BIGINT <<PK>>
+  --
+  * user_id : BIGINT <<FK, UK>>
+  * store_id : BIGINT <<FK>>
+}
+entity cart_items {
+  * cart_id : BIGINT <<PK, FK>>
+  * product_id : BIGINT <<PK, FK>>
+  --
+  * quantity : INT  (> 0)
+}
+entity orders {
+  * id : BIGINT <<PK>>
+  --
+  * user_id : BIGINT <<FK>>
+  * store_id : BIGINT <<FK>>
+  * status : VARCHAR(20)
+  * total_amount : DECIMAL(10,2)
+  * delivery_address : VARCHAR(500)
+  * delivery_pincode : CHAR(6)
+  * reservation_strategy : VARCHAR(20)
+  * expires_at : DATETIME(6)
+}
+entity order_items {
+  * id : BIGINT <<PK>>
+  --
+  * order_id : BIGINT <<FK>>
+  * product_id : BIGINT <<FK>>
+  * quantity : INT
+  * unit_price : DECIMAL(10,2)
+}
+entity payments {
+  * id : BIGINT <<PK>>
+  --
+  * order_id : BIGINT <<FK>>
+  * razorpay_order_id : VARCHAR(64) <<UK>>
+  razorpay_payment_id : VARCHAR(64)
+  * amount_paise : BIGINT
+  * currency : CHAR(3)
+  * status : VARCHAR(20)
+}
+entity notifications {
+  * id : BIGINT <<PK>>
+  --
+  * user_id : BIGINT <<FK>>
+  * order_id : BIGINT <<FK>>
+  * status : VARCHAR(20)
+  * message : VARCHAR(255)
+}
+entity webhook_events {
+  * id : BIGINT <<PK>>
+  --
+  * provider : VARCHAR(20)
+  * event_id : VARCHAR(100)
+  * event_type : VARCHAR(50)
+  * payload : JSON
+  processed_at : DATETIME(6)
+}
+
+stores ||--o{ serviceable_pincodes
+categories ||--o{ products
+stores ||--o{ store_inventory
+products ||--o{ store_inventory
+users ||--o| carts
+stores ||--o{ carts
+carts ||--o{ cart_items
+products ||--o{ cart_items
+users ||--o{ orders
+stores ||--o{ orders
+orders ||--|{ order_items
+products ||--o{ order_items
+orders ||--o{ payments
+orders ||--o{ notifications
+users ||--o{ notifications
+@enduml

@@ -1,0 +1,32 @@
+@startuml order-states
+!include style.iuml
+hide empty description
+skinparam nodesep 40
+
+[*] --> CREATED : checkout reserves stock
+CREATED --> PAYMENT_PENDING : payment started\n(Razorpay order created)
+CREATED --> PAID : payment captured
+PAYMENT_PENDING --> PAID : payment captured\n(verify or webhook)
+CREATED --> CANCELLED : customer cancels
+PAYMENT_PENDING --> CANCELLED : customer cancels
+CREATED --> EXPIRED : 10 min, unpaid\n(expiry job)
+PAYMENT_PENDING --> EXPIRED : 10 min, unpaid\n(expiry job)
+PAID --> PACKED : admin
+PACKED --> OUT_FOR_DELIVERY : admin
+OUT_FOR_DELIVERY --> DELIVERED : admin
+CANCELLED --> [*]
+EXPIRED --> [*]
+DELIVERED --> [*]
+
+note right of PAID
+  Reserved units become sold:
+  reserved_qty decreases.
+end note
+note bottom of EXPIRED
+  Stock released:
+  available_qty += qty,
+  reserved_qty -= qty.
+  A payment arriving now is
+  marked REFUND_REQUIRED.
+end note
+@enduml

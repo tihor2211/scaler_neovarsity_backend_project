@@ -1,0 +1,54 @@
+@startuml lock-late
+!include style.iuml
+skinparam TimingFontSize 11
+hide time-axis
+scale 1 as 68 pixels
+
+concise "Before: reserve first" as B
+robust "Row lock (before)" as BL
+concise "After: lock late" as A
+robust "Row lock (after)" as AL
+
+BL has Held,Free
+AL has Held,Free
+
+@0
+B is "checks"
+BL is Free
+A is "checks"
+AL is Free
+
+@1
+B is "reserve"
+BL is Held
+A is "precheck"
+
+@2
+B is "order"
+A is "order"
+
+@3
+B is "items"
+A is "items"
+
+@4
+B is "cart"
+A is "cart"
+
+@5
+B is "commit"
+A is "reserve"
+AL is Held
+
+@6
+B is {-}
+BL is Free
+A is "commit"
+
+@7
+A is {-}
+AL is Free
+
+BL@1 <-> @6 : held across 4 statements + commit
+AL@5 <-> @7 : 1 statement + commit
+@enduml

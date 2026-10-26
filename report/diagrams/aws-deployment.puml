@@ -1,0 +1,38 @@
+@startuml aws-deployment
+!include style.iuml
+skinparam nodesep 30
+skinparam ranksep 45
+
+actor "Customers and\nstore admins" as users
+cloud "Razorpay" as rzp
+actor "Developer" as dev
+
+rectangle "AWS region ap-south-1 (Mumbai): planned" {
+  rectangle "VPC 10.0.0.0/16" {
+    component "Internet gateway" as igw
+    rectangle "Public subnet" {
+      node "EC2 instance managed by Elastic Beanstalk\n(Docker on Amazon Linux 2023)\nsecurity group: dashcart-app-sg" as ec2 {
+        component "dashcart-app container\n(host port 80 → 8080)" as app
+        component "kafka container\n(KRaft, 9092)" as kafka
+      }
+    }
+    rectangle "Private subnets (2 availability zones)" {
+      database "RDS MySQL 8.4\ndb.t4g.micro\nsg: dashcart-db-sg" as rds
+      database "ElastiCache Redis\ncache.t4g.micro\nsg: dashcart-cache-sg" as redis
+    }
+  }
+  component "Elastic Beanstalk\n(deploys app versions,\nhealth checks, logs)" as eb
+  database "S3\n(application bundles)" as s3
+}
+
+users --> igw : HTTP(S)
+rzp --> igw : webhooks
+igw --> app
+app --> kafka
+app --> rds : 3306, only from\ndashcart-app-sg
+app --> redis : 6379, only from\ndashcart-app-sg
+app --> rzp : Orders API (HTTPS)
+dev --> eb : eb deploy
+eb --> s3
+eb ..> ec2 : provisions,\nmonitors
+@enduml

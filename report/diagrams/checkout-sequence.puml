@@ -1,0 +1,37 @@
+@startuml checkout-sequence
+!include style.iuml
+hide footbox
+autonumber
+
+actor Client
+participant "JWT\nfilter" as F
+participant "Order\nController" as C
+participant "Checkout\nService" as S
+participant "Reservation\nstrategy" as R
+database "MySQL" as DB
+participant "Event\npublisher" as P
+
+Client -> F : POST /orders/checkout\n(JWT + JSON)
+F -> F : verify token,\ndeny-list check
+F -> C : checkout(user,\n@Valid request)
+C -> S : checkout(user,\nrequest)
+S -> DB : BEGIN
+S -> DB : load cart lines;\ncheck pincode, store
+S -> R : precheck(items)
+R -> DB : SELECT available_qty\n(no lock)
+S -> DB : INSERT order (CREATED,\nexpires in 10 min)
+S -> DB : INSERT items;\nDELETE cart items
+S -> R : reserve(items)
+R -> DB : UPDATE ... WHERE\navailable_qty >= ?
+note right of DB : row lock from\nhere to COMMIT
+alt 0 rows for an item
+  R --> S : InsufficientStock
+  S -> DB : ROLLBACK
+  C --> Client : 409 Conflict
+else all items reserved
+  S -> P : publish(order,\nCREATED)
+  S -> DB : COMMIT
+  P ->] : after commit: Kafka\norder-events, key = orderId
+  C --> Client : 201 Created\n(order JSON)
+end
+@enduml

@@ -107,6 +107,7 @@ src/main/java/com/dashcart/
   config/, common/ security, caching, error handling
 src/main/resources/db/migration/   Flyway SQL migrations (the schema lives here)
 load-tests/        k6 scripts, benchmark runners and committed results
+report/            the applied project report: Markdown chapters, PlantUML diagrams, build scripts
 Dockerfile, docker-compose.yml
 ```
 

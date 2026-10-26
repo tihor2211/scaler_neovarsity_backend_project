@@ -1,0 +1,28 @@
+@startuml layers
+!include style.iuml
+skinparam ranksep 28
+skinparam nodesep 20
+skinparam RectangleBackgroundColor #F2F6FB
+skinparam RectangleBorderColor #3B5B7F
+
+rectangle "**HTTP request**  JSON body, Authorization: Bearer <JWT>" as req #FFFFFF
+rectangle "**Security**\nSecurityFilterChain (stateless) → JwtAuthenticationFilter: verify signature and expiry,\ncheck the logout deny-list, set the user and role" as sec
+rectangle "**Web layer**\n@RestController classes · request/response DTOs as Java records with Bean Validation\nGlobalExceptionHandler turns every error into an RFC 9457 problem detail" as web
+rectangle "**Service layer**\n@Service classes with @Transactional · CheckoutService (TransactionTemplate, retries, metrics)\nStockReservationStrategy implementations · StockLedger · OrderService state transitions" as svc
+rectangle "**Persistence**\nSpring Data JPA repositories\nJdbcTemplate for stock updates\n@Entity classes" as per
+rectangle "**Integration**\nRazorpayGateway (RestClient)\nOrderEventPublisher / NotificationListener (Kafka)\nCatalogCache, RedisStockStore, TokenDenylist (Redis)" as integ
+database "MySQL" as mysql
+database "Redis" as redis
+queue "Kafka" as kafka
+cloud "Razorpay" as rzp
+
+req -down-> sec
+sec -down-> web
+web -down-> svc
+svc -down-> per
+svc -down-> integ
+per -down-> mysql
+integ -down-> redis
+integ -down-> kafka
+integ -down-> rzp
+@enduml

@@ -1,0 +1,30 @@
+@startuml kafka-flow
+!include style.iuml
+skinparam nodesep 18
+skinparam ranksep 60
+
+rectangle "Producers (in the API)" {
+  component "CheckoutService\nCREATED" as p1
+  component "OrderService\nPAID, CANCELLED,\nEXPIRED, PACKED, ..." as p2
+  component "OrderEventPublisher\nafter commit,\nacks=all, idempotent" as pub
+}
+rectangle "Kafka topic: order-events" as topic {
+  queue "partition 0" as q0
+  queue "partition 1" as q1
+  queue "partition 2" as q2
+}
+rectangle "Consumer group: dashcart-notifications" {
+  component "NotificationListener\nmessage per status;\nskip duplicates" as l
+}
+database "notifications\nunique (order_id, status)" as n
+
+p1 --> pub
+p2 --> pub
+pub --> q0 : key = orderId\n(one order → one partition,\nevents stay in order)
+pub --> q1
+pub --> q2
+q0 --> l
+q1 --> l
+q2 --> l
+l --> n
+@enduml

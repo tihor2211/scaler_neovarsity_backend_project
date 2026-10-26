@@ -1,0 +1,82 @@
+@startuml domain-shopping
+!include style.iuml
+hide empty methods
+skinparam nodesep 40
+skinparam ranksep 50
+
+class User <<Entity>> {
+  -id: Long
+  -name: String
+  -email: String {unique}
+  -phone: String
+  -passwordHash: String
+  -role: Role
+}
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+class Store <<Entity>> {
+  -id: Long
+  -name: String
+  -address: String
+  -latitude, longitude: BigDecimal
+  -active: boolean
+  +setActive(boolean)
+}
+class ServiceablePincode <<Entity>> {
+  -pincode: String {id}
+  -storeId: Long
+}
+class Category <<Entity>> {
+  -id: Long
+  -name: String {unique}
+}
+class Product <<Entity>> {
+  -id: Long
+  -categoryId: Long
+  -name, description, unit: String
+  -mrp: BigDecimal
+  -price: BigDecimal
+  -active: boolean
+  +update(...)
+}
+class StoreInventory <<Entity>> {
+  -id: StoreInventoryId
+  -availableQty: int
+  -reservedQty: int
+  -version: long
+  +setAvailableQty(int)
+}
+class StoreInventoryId <<record>> {
+  storeId: Long
+  productId: Long
+}
+class Cart <<Entity>> {
+  -id: Long
+  -userId: Long {unique}
+  -storeId: Long
+  +setStoreId(Long)
+}
+class CartItem <<Entity>> {
+  -id: CartItemId
+  -quantity: int
+  +setQuantity(int)
+}
+class CartItemId <<record>> {
+  cartId: Long
+  productId: Long
+}
+
+User --> Role
+Store "1" <.. "*" ServiceablePincode : storeId
+Category "1" <.. "*" Product : categoryId
+StoreInventory *-- StoreInventoryId
+StoreInventoryId ..> "1" Store : storeId
+StoreInventoryId ..> "1" Product : productId
+User "1" <.. "0..1" Cart : userId
+Cart ..> "1" Store : storeId
+Cart "1" <.. "*" CartItem : cartId
+CartItem *-- CartItemId
+CartItemId ..> Product : productId
+@enduml

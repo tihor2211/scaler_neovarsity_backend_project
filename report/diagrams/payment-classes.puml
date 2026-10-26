@@ -1,0 +1,60 @@
+@startuml payment-classes
+!include style.iuml
+skinparam nodesep 22
+skinparam ranksep 40
+
+class PaymentController <<RestController>> {
+  +start(user, orderId)
+  +verify(user, VerifyRequest)
+  +webhook(byte[] body, signature, eventId)
+}
+class PaymentService <<Service>> {
+  +start(orderId, user): StartPaymentResponse
+  +verify(request, user): PaymentResponse
+  +handleWebhook(body, signature, eventId)
+  -apply(event, eventId, payload)
+  -capture(payment, razorpayPaymentId)
+}
+class RazorpayGateway <<Component>> {
+  -client: RestClient (Basic auth)
+  +createOrder(paise, currency, receipt)
+  +keyId(): String
+}
+class Signatures <<utility>> {
+  +hmacSha256Hex(message, secret)
+  +matches(message, secret, signature)
+}
+interface PaymentRepository {
+  +findForUpdate(razorpayOrderId)
+}
+interface WebhookEventRepository {
+  +existsByProviderAndEventId(..)
+}
+class OrderService <<Service>> {
+  +markPaymentPending(orderId)
+  +markPaid(orderId): boolean
+  +cancel(orderId, user)
+  +expireDue(): int
+}
+interface CustomerOrderRepository {
+  +transition(id, from, to, now): int
+}
+class OrderEventPublisher <<Component>> {
+  +publish(order, status)
+}
+class NotificationListener <<KafkaListener>> {
+  +onOrderEvent(json)
+}
+
+PaymentController --> PaymentService
+PaymentService --> RazorpayGateway
+PaymentService --> Signatures
+PaymentService --> PaymentRepository
+PaymentService --> WebhookEventRepository
+Signatures -[hidden]down- PaymentRepository
+RazorpayGateway -[hidden]down- WebhookEventRepository
+PaymentService --> OrderService
+OrderService --> CustomerOrderRepository
+OrderService --> OrderEventPublisher
+OrderEventPublisher ..> NotificationListener : OrderEvent JSON\nvia Kafka "order-events"
+@enduml

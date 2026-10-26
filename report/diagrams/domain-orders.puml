@@ -1,0 +1,91 @@
+@startuml domain-orders
+!include style.iuml
+left to right direction
+hide empty methods
+skinparam nodesep 40
+skinparam ranksep 50
+
+class CustomerOrder <<Entity>> {
+  -id: Long
+  -userId: Long
+  -storeId: Long
+  -status: OrderStatus
+  -totalAmount: BigDecimal
+  -deliveryAddress: String
+  -deliveryPincode: String
+  -reservationStrategy: ReservationStrategyType
+  -expiresAt: Instant
+}
+class OrderItem <<Entity>> {
+  -id: Long
+  -orderId: Long
+  -productId: Long
+  -quantity: int
+  -unitPrice: BigDecimal
+}
+enum OrderStatus {
+  CREATED
+  PAYMENT_PENDING
+  PAID
+  PACKED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  EXPIRED
+  --
+  +HOLDING_STOCK: Set
+  +nextFulfilmentStep(): OrderStatus
+}
+enum ReservationStrategyType {
+  NAIVE
+  OPTIMISTIC
+  PESSIMISTIC
+  CONDITIONAL_UPDATE
+  REDIS
+}
+class Payment <<Entity>> {
+  -id: Long
+  -orderId: Long
+  -razorpayOrderId: String {unique}
+  -razorpayPaymentId: String
+  -amountPaise: long
+  -currency: String
+  -status: PaymentStatus
+  +captured(paymentId, orderAccepted)
+  +failed(paymentId)
+}
+enum PaymentStatus {
+  CREATED
+  CAPTURED
+  FAILED
+  REFUND_REQUIRED
+}
+class WebhookEvent <<Entity>> {
+  -id: Long
+  -provider: String
+  -eventId: String
+  -eventType: String
+  -payload: String (JSON)
+  -processedAt: Instant
+  +processed()
+}
+class Notification <<Entity>> {
+  -id: Long
+  -userId: Long
+  -orderId: Long
+  -status: String
+  -message: String
+}
+
+CustomerOrder "1" <.. "1..*" OrderItem : orderId
+CustomerOrder --> OrderStatus
+CustomerOrder --> ReservationStrategyType
+CustomerOrder "1" <.. "*" Payment : orderId
+Payment --> PaymentStatus
+CustomerOrder "1" <.. "*" Notification : orderId
+note bottom of WebhookEvent
+  One row per Razorpay delivery;
+  (provider, eventId) is unique,
+  so a repeat is ignored.
+end note
+@enduml

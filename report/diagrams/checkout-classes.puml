@@ -1,0 +1,71 @@
+@startuml checkout-classes
+!include style.iuml
+skinparam nodesep 22
+skinparam ranksep 40
+
+class OrderController <<RestController>> {
+  +checkout(user, request): OrderResponse
+}
+class ReservationAdminController <<RestController>> {
+  +get() / +set(strategy)
+}
+class CheckoutService <<Service>> {
+  -tx: TransactionTemplate
+  -optimisticMaxAttempts: int
+  +checkout(user, request): OrderResponse
+  -placeOrder(userId, request, strategy): Long
+  -backOff(attempt)
+}
+class ReservationStrategies <<Component>> {
+  -byType: EnumMap<Type, Strategy>
+  -active: AtomicReference<Type>
+  +active(): StockReservationStrategy
+  +activate(type)
+}
+interface StockReservationStrategy {
+  +type(): ReservationStrategyType
+  +precheck(storeId, List<StockRequest>)
+  +reserve(storeId, List<StockRequest>)
+}
+note right of StockReservationStrategy
+  Both methods throw InsufficientStockException (409).
+  Optimistic's reserve throws ReservationConflictException:
+  CheckoutService retries the whole checkout.
+  StockRequest = (productId, quantity, productName),
+  sorted by productId so locks are taken in one order.
+end note
+class NaiveReservation
+class OptimisticReservation
+class PessimisticReservation
+class ConditionalUpdateReservation
+class RedisReservation
+class StockPrecheck {
+  ~requireAvailable(storeId, items)
+}
+class RedisStockStore <<Component>> {
+  ~tryReserve(storeId, items): long
+  ~release(storeId, items)
+  +loadAllFromDatabase()
+}
+class StockLedger <<Component>> {
+  +confirm(storeId, items)
+  +release(storeId, items, reservedWith)
+}
+
+OrderController --> CheckoutService
+CheckoutService --> ReservationStrategies
+ReservationAdminController --> ReservationStrategies
+ReservationStrategies o--> "5" StockReservationStrategy
+StockReservationStrategy <|.. NaiveReservation
+StockReservationStrategy <|.. OptimisticReservation
+StockReservationStrategy <|.. PessimisticReservation
+StockReservationStrategy <|.. ConditionalUpdateReservation
+StockReservationStrategy <|.. RedisReservation
+NaiveReservation -[hidden]down- ConditionalUpdateReservation
+OptimisticReservation -[hidden]down- RedisReservation
+OptimisticReservation --> StockPrecheck
+PessimisticReservation --> StockPrecheck
+ConditionalUpdateReservation --> StockPrecheck
+RedisReservation --> RedisStockStore
+StockLedger --> RedisStockStore
+@enduml

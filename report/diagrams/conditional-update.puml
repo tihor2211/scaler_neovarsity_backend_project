@@ -1,0 +1,23 @@
+@startuml conditional-update
+!include style.iuml
+hide footbox
+
+participant "Checkout A\n(CONDITIONAL_UPDATE)" as A
+database "store_inventory row\navailable = 1, reserved = 0" as DB
+participant "Checkout B\n(CONDITIONAL_UPDATE)" as B
+
+A -> DB : UPDATE SET available_qty = available_qty - 1, ...\nWHERE store_id = ? AND product_id = ?\nAND available_qty >= 1
+activate DB
+DB --> A : 1 row updated (A holds the row lock)
+B -> DB : same UPDATE
+note right of B : waits for A's lock
+A -> DB : COMMIT
+deactivate DB
+DB --> B : lock granted; WHERE re-evaluated on the\nlatest committed row: available = 0\n→ 0 rows updated
+B -> B : InsufficientStockException
+B -> DB : ROLLBACK (order rows undone)
+note over DB #E5F5E5
+  available = 0, reserved = 1: exactly one order holds the unit.
+  B's customer gets 409 "out of stock".
+end note
+@enduml

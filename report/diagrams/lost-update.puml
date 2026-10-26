@@ -1,0 +1,28 @@
+@startuml lost-update
+!include style.iuml
+hide footbox
+
+participant "Checkout A\n(NAIVE)" as A
+database "store_inventory row\navailable = 1, reserved = 0" as DB
+participant "Checkout B\n(NAIVE)" as B
+
+A -> DB : SELECT available_qty
+DB --> A : 1
+B -> DB : SELECT available_qty
+DB --> B : 1
+note over A, B : Both see one unit left and pass the check in Java.
+A -> DB : UPDATE SET available_qty = 0,\nreserved_qty = reserved_qty + 1
+activate DB
+note right of DB : A holds the row lock
+B -> DB : UPDATE SET available_qty = 0,\nreserved_qty = reserved_qty + 1
+note right of B : waits for A's lock
+A -> DB : COMMIT
+deactivate DB
+DB --> B : lock granted; B writes the\nvalue it computed from its stale read
+B -> DB : COMMIT
+note over DB #FFE5E5
+  available = 0, reserved = 2:
+  two orders hold the same single unit (oversold).
+  The lock only made B wait; it didn't make B re-check.
+end note
+@enduml

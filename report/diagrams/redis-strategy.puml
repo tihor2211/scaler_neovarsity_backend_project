@@ -1,0 +1,33 @@
+@startuml redis-strategy
+!include style.iuml
+hide footbox
+autonumber
+
+participant "CheckoutService\n(transaction)" as S
+participant "RedisReservation" as RR
+database "Redis\nstock:{store}:product" as R
+database "MySQL" as DB
+
+S -> RR : precheck(storeId, items)
+RR -> R : EVAL reserve.lua (all keys, quantities)
+note right of R
+  One script, run atomically:
+  if any key is missing → return -i
+  if any stock < qty → return i
+  else DECRBY every key → return 0
+end note
+alt missing key (-i)
+  RR -> DB : SELECT available_qty
+  RR -> R : SET key value NX, then EVAL again
+else not enough (i > 0)
+  RR --> S : InsufficientStockException → 409
+end
+RR -> RR : on rollback: give the units back\n(EVAL release.lua, INCRBY)
+S -> DB : INSERT order, items; DELETE cart items
+S -> RR : reserve(storeId, items)
+RR -> DB : UPDATE ... WHERE available_qty >= ?\n(safety net: the database has the final say)
+alt 0 rows: Redis was ahead of MySQL
+  RR -> RR : after rollback: delete the Redis key\nso the next checkout reloads it
+end
+S -> DB : COMMIT
+@enduml

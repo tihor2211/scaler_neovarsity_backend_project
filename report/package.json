@@ -1,0 +1,11 @@
+{
+  "name": "dashcart-report",
+  "private": true,
+  "description": "Builds the applied project report (Word) from the Markdown chapters",
+  "scripts": {
+    "build": "node build-report.js"
+  },
+  "dependencies": {
+    "docx": "^9.14.0"
+  }
+}

@@ -1,0 +1,38 @@
+@startuml customer-journey
+!include style.iuml
+
+|Customer|
+start
+:Enter delivery pincode;
+|DashCart API|
+if (Pincode served by an active dark store?) then (no)
+  :404 "We don't deliver to this pincode yet";
+  stop
+else (yes)
+  :Return the serving store;
+endif
+|Customer|
+:Browse the store's products\n(cached listing, category / search filters);
+:Add items to cart\n(one store per cart, max 10 of an item);
+:Check out with delivery address;
+|DashCart API|
+:Reserve stock for every item\n(all or nothing) and create order;
+if (Enough stock?) then (no)
+  :409 "Not enough <item> left";
+  stop
+else (yes)
+  :Order CREATED, stock reserved\nfor 10 minutes;
+endif
+|Customer|
+:Pay with Razorpay Checkout;
+|DashCart API|
+if (Payment confirmed within 10 minutes?) then (yes)
+  :Order PAID, reserved stock sold;
+  :Store packs it: PACKED,\nOUT_FOR_DELIVERY, DELIVERED;
+else (no / cancelled)
+  :Order EXPIRED or CANCELLED,\nstock back on sale;
+endif
+|Customer|
+:Order updates arrive in the\nnotifications inbox (via Kafka);
+stop
+@enduml
