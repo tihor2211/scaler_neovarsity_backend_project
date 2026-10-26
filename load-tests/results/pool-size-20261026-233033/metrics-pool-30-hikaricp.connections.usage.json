@@ -1,0 +1,1 @@
+{"availableTags":[{"tag":"pool","values":["HikariPool-1"]}],"baseUnit":"seconds","description":"Connection usage time","measurements":[{"statistic":"COUNT","value":12432.0},{"statistic":"TOTAL_TIME","value":610.189},{"statistic":"MAX","value":0.43}],"name":"hikaricp.connections.usage"}

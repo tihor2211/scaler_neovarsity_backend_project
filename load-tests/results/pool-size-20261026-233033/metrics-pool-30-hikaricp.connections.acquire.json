@@ -1,0 +1,1 @@
+{"availableTags":[{"tag":"pool","values":["HikariPool-1"]}],"baseUnit":"seconds","description":"Connection acquire time","measurements":[{"statistic":"COUNT","value":12432.0},{"statistic":"TOTAL_TIME","value":456.067},{"statistic":"MAX","value":0.607}],"name":"hikaricp.connections.acquire"}

@@ -1,0 +1,1 @@
+{"availableTags":[{"tag":"pool","values":["HikariPool-1"]}],"description":"Max connections","measurements":[{"statistic":"VALUE","value":30.0}],"name":"hikaricp.connections.max"}
