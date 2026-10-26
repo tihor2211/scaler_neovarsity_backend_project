@@ -16,6 +16,7 @@ import com.dashcart.auth.AuthUser;
 import com.dashcart.auth.Role;
 import com.dashcart.common.ApiException;
 import com.dashcart.common.PageResponse;
+import com.dashcart.events.OrderEventPublisher;
 import com.dashcart.inventory.reservation.StockLedger;
 import com.dashcart.inventory.reservation.StockRequest;
 import com.dashcart.order.OrderDtos.OrderItemResponse;
@@ -32,13 +33,15 @@ public class OrderService {
     private final CustomerOrderRepository orders;
     private final OrderItemRepository orderItems;
     private final StockLedger ledger;
+    private final OrderEventPublisher events;
     private final TransactionTemplate tx;
 
     public OrderService(CustomerOrderRepository orders, OrderItemRepository orderItems, StockLedger ledger,
-            TransactionTemplate tx) {
+            OrderEventPublisher events, TransactionTemplate tx) {
         this.orders = orders;
         this.orderItems = orderItems;
         this.ledger = ledger;
+        this.events = events;
         this.tx = tx;
     }
 
@@ -66,6 +69,7 @@ public class OrderService {
             throw ApiException.conflict("Order " + orderId + " can't be cancelled now (it is " + order.getStatus() + ")");
         }
         release(order);
+        events.publish(order, OrderStatus.CANCELLED);
         return toResponse(orders.findById(orderId).orElseThrow());
     }
 
@@ -81,6 +85,7 @@ public class OrderService {
                     return false;
                 }
                 release(order);
+                events.publish(order, OrderStatus.EXPIRED);
                 return true;
             });
             if (Boolean.TRUE.equals(done)) {
@@ -106,6 +111,7 @@ public class OrderService {
             return false;
         }
         ledger.confirm(order.getStoreId(), stockOf(orderId));
+        events.publish(order, OrderStatus.PAID);
         return true;
     }
 
@@ -119,6 +125,7 @@ public class OrderService {
                 || orders.transition(orderId, EnumSet.of(order.getStatus()), next, Instant.now()) == 0) {
             throw ApiException.conflict("Order " + orderId + " can't move on from " + order.getStatus());
         }
+        events.publish(order, next);
         return toResponse(orders.findById(orderId).orElseThrow());
     }
 

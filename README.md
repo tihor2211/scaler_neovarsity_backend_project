@@ -61,7 +61,7 @@ docker-compose.yml local MySQL + Redis
 - [x] Checkout with five stock-reservation strategies (naive, optimistic, pessimistic, conditional update, Redis Lua)
 - [x] Razorpay payment: order per attempt, signature-checked verify + webhook, idempotent, late payment flagged for refund
 - [x] Order lifecycle: cancel, 10-minute reservation expiry job, admin fulfilment steps
-- [ ] Redis catalogue cache
+- [x] Redis catalogue cache (30 s TTL, invalidated after commit on admin changes)
 - [x] Load test (k6): flash-sale rush, 500 buyers vs 100 units, every strategy (load-tests/results)
-- [ ] Kafka order events
+- [x] Kafka order events -> notifications inbox (GET /notifications)
 - [ ] AWS deployment

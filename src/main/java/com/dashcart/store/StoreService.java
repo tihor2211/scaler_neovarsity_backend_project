@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.dashcart.common.ApiException;
+import com.dashcart.config.CatalogCache;
 import com.dashcart.store.StoreDtos.CreateStoreRequest;
 import com.dashcart.store.StoreDtos.ServiceabilityResponse;
 import com.dashcart.store.StoreDtos.StoreResponse;
@@ -15,10 +16,12 @@ public class StoreService {
 
     private final StoreRepository stores;
     private final ServiceablePincodeRepository pincodes;
+    private final CatalogCache cache;
 
-    public StoreService(StoreRepository stores, ServiceablePincodeRepository pincodes) {
+    public StoreService(StoreRepository stores, ServiceablePincodeRepository pincodes, CatalogCache cache) {
         this.stores = stores;
         this.pincodes = pincodes;
+        this.cache = cache;
     }
 
     @Transactional
@@ -42,6 +45,7 @@ public class StoreService {
 
     @Transactional
     public StoreResponse setActive(Long storeId, boolean active) {
+        cache.invalidateListingsAfterCommit();
         Store store = getActiveOrInactive(storeId);
         store.setActive(active);
         return StoreResponse.from(store, pincodesOf(storeId));

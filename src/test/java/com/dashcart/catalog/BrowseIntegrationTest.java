@@ -71,6 +71,19 @@ class BrowseIntegrationTest extends IntegrationTest {
     }
 
     @Test
+    void stockTakeClearsTheCachedListing() throws Exception {
+        TestApi api = api();
+        String admin = api.adminToken();
+        long storeId = api.createStore(admin, TestApi.randomPincode());
+        long product = api.createProduct(admin, api.createCategory(admin), "Paneer", "95.00", "89.00");
+        api.setStock(admin, storeId, product, 3);
+
+        mvc.perform(get("/stores/{id}/products", storeId)).andExpect(jsonPath("$.content[0].inStock", is(true)));
+        api.setStock(admin, storeId, product, 0);
+        mvc.perform(get("/stores/{id}/products", storeId)).andExpect(jsonPath("$.content[0].inStock", is(false)));
+    }
+
+    @Test
     void priceAboveMrpIsRejected() throws Exception {
         TestApi api = api();
         String admin = api.adminToken();

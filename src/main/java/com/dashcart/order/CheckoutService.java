@@ -17,6 +17,7 @@ import com.dashcart.cart.CartDtos.CartLine;
 import com.dashcart.cart.CartItemRepository;
 import com.dashcart.cart.CartRepository;
 import com.dashcart.common.ApiException;
+import com.dashcart.events.OrderEventPublisher;
 import com.dashcart.inventory.reservation.InsufficientStockException;
 import com.dashcart.inventory.reservation.ReservationConflictException;
 import com.dashcart.inventory.reservation.ReservationStrategies;
@@ -44,13 +45,15 @@ public class CheckoutService {
     private final CustomerOrderRepository orders;
     private final OrderItemRepository orderItems;
     private final OrderService orderService;
+    private final OrderEventPublisher events;
     private final MeterRegistry meters;
     private final Duration reservationTtl;
     private final int optimisticMaxAttempts;
 
     public CheckoutService(TransactionTemplate tx, CartRepository carts, CartItemRepository cartItems,
             StoreService storeService, ReservationStrategies strategies, CustomerOrderRepository orders,
-            OrderItemRepository orderItems, OrderService orderService, MeterRegistry meters,
+            OrderItemRepository orderItems, OrderService orderService, OrderEventPublisher events,
+            MeterRegistry meters,
             @Value("${dashcart.checkout.reservation-ttl:PT10M}") Duration reservationTtl,
             @Value("${dashcart.checkout.optimistic-max-attempts:5}") int optimisticMaxAttempts) {
         this.tx = tx;
@@ -61,6 +64,7 @@ public class CheckoutService {
         this.orders = orders;
         this.orderItems = orderItems;
         this.orderService = orderService;
+        this.events = events;
         this.meters = meters;
         this.reservationTtl = reservationTtl;
         this.optimisticMaxAttempts = optimisticMaxAttempts;
@@ -131,6 +135,7 @@ public class CheckoutService {
         cartItems.deleteAllInCart(cart.getId());
 
         strategy.reserve(storeId, items);
+        events.publish(order, OrderStatus.CREATED);
         return order.getId();
     }
 

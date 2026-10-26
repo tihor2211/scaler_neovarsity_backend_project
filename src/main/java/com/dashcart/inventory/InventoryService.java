@@ -9,6 +9,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import com.dashcart.catalog.CatalogService;
 import com.dashcart.common.ApiException;
+import com.dashcart.config.CatalogCache;
 import com.dashcart.inventory.InventoryDtos.InventoryRow;
 import com.dashcart.inventory.InventoryDtos.StockLine;
 import com.dashcart.inventory.reservation.RedisStockStore;
@@ -21,13 +22,15 @@ public class InventoryService {
     private final StoreRepository stores;
     private final CatalogService catalogService;
     private final RedisStockStore redisStock;
+    private final CatalogCache cache;
 
     public InventoryService(StoreInventoryRepository inventory, StoreRepository stores,
-            CatalogService catalogService, RedisStockStore redisStock) {
+            CatalogService catalogService, RedisStockStore redisStock, CatalogCache cache) {
         this.inventory = inventory;
         this.stores = stores;
         this.catalogService = catalogService;
         this.redisStock = redisStock;
+        this.cache = cache;
     }
 
     @Transactional
@@ -43,6 +46,7 @@ public class InventoryService {
                     () -> inventory.save(new StoreInventory(id, line.availableQty())));
         }
         inventory.flush();
+        cache.invalidateListingsAfterCommit();
         // The Redis copy (REDIS checkout strategy) is now stale: drop it once this commits; the next
         // checkout reloads the counted value from the database.
         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {

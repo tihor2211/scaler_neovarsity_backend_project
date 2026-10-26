@@ -1,5 +1,6 @@
 package com.dashcart.catalog;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 import jakarta.validation.constraints.DecimalMin;
@@ -16,7 +17,7 @@ public final class CatalogDtos {
     public record CategoryRequest(@NotBlank @Size(max = 100) String name) {
     }
 
-    public record CategoryResponse(Long id, String name) {
+    public record CategoryResponse(Long id, String name) implements Serializable {
 
         static CategoryResponse from(Category category) {
             return new CategoryResponse(category.getId(), category.getName());
@@ -50,7 +51,7 @@ public final class CatalogDtos {
 
     public record StoreProductResponse(Long productId, String name, String description, String unit,
             BigDecimal mrp, BigDecimal price, String imageUrl, Long categoryId, String categoryName,
-            boolean inStock) {
+            boolean inStock) implements Serializable {
 
         static StoreProductResponse from(StoreProductView v) {
             return new StoreProductResponse(v.productId(), v.name(), v.description(), v.unit(), v.mrp(), v.price(),
