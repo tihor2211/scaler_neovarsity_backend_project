@@ -130,35 +130,46 @@ Table: webhook_events and notifications {#tbl:t-events widths=24,24,52}
 
 ## 4.3 Foreign keys
 
-- serviceable_pincodes(store_id) refers stores(id)
-- products(category_id) refers categories(id)
-- store_inventory(store_id) refers stores(id)
-- store_inventory(product_id) refers products(id)
-- carts(user_id) refers users(id)
-- carts(store_id) refers stores(id)
-- cart_items(cart_id) refers carts(id), deleting a cart deletes its items
-- cart_items(product_id) refers products(id)
-- orders(user_id) refers users(id)
-- orders(store_id) refers stores(id)
-- order_items(order_id) refers orders(id)
-- order_items(product_id) refers products(id)
-- payments(order_id) refers orders(id)
-- notifications(user_id) refers users(id)
-- notifications(order_id) refers orders(id)
+Every reference between tables is declared as a foreign key, so MySQL rejects a row that points at something that doesn't exist (@tbl:fks).
 
-`webhook_events` has no foreign keys on purpose: an event is recorded before it is applied, and it may refer to a Razorpay order DashCart doesn't know.
+Table: Foreign keys {#tbl:fks widths=36,22,42}
+| Column | Points to | Notes |
+|---|---|---|
+| serviceable_pincodes.store_id | stores.id | The store that delivers to this pincode |
+| products.category_id | categories.id | |
+| store_inventory.store_id | stores.id | Part of the composite primary key |
+| store_inventory.product_id | products.id | Part of the composite primary key |
+| carts.user_id | users.id | Also unique: one cart per customer |
+| carts.store_id | stores.id | The store the cart is filled from |
+| cart_items.cart_id | carts.id | `ON DELETE CASCADE`: a deleted cart takes its lines with it |
+| cart_items.product_id | products.id | |
+| orders.user_id | users.id | |
+| orders.store_id | stores.id | |
+| order_items.order_id | orders.id | |
+| order_items.product_id | products.id | |
+| payments.order_id | orders.id | Indexed, not unique: one row per payment attempt |
+| notifications.user_id | users.id | |
+| notifications.order_id | orders.id | |
+
+`webhook_events` has no foreign keys on purpose: an event is stored before it is applied, and it may mention a Razorpay order that DashCart has never seen.
 
 ## 4.4 Cardinality of relations
 
-- Between stores and serviceable_pincodes: 1:m (a store serves many pincodes, a pincode belongs to one store)
-- Between categories and products: 1:m
-- Between stores and products: m:m, through store_inventory (a store stocks many products, a product is stocked in many stores)
-- Between users and carts: 1:0..1 (at most one cart per user)
-- Between carts and products: m:m, through cart_items
-- Between users and orders: 1:m; between stores and orders: 1:m
-- Between orders and products: m:m, through order_items (an order has one or more items)
-- Between orders and payments: 1:m (one row per payment attempt)
-- Between orders and notifications: 1:m (at most one per status)
+@tbl:cardinality states how many rows on each side of a relationship can be linked. Three of the many-to-many relationships carry data of their own (a stock level, a cart quantity, an ordered quantity and price), which is why each is a table rather than a plain link.
+
+Table: Cardinality of relations {#tbl:cardinality widths=40,20,40}
+| Relationship | Cardinality | Implemented by |
+|---|---|---|
+| A store and the pincodes it serves | one-to-many | serviceable_pincodes.store_id |
+| A category and its products | one-to-many | products.category_id |
+| Stores and the products they stock | many-to-many | store_inventory, with the stock level |
+| A customer and their cart | one-to-zero-or-one | carts.user_id (unique) |
+| Carts and the products in them | many-to-many | cart_items, with the quantity |
+| A customer and their orders | one-to-many | orders.user_id |
+| A store and the orders it fulfils | one-to-many | orders.store_id |
+| Orders and the products in them | many-to-many | order_items, with quantity and price; at least one per order |
+| An order and its payment attempts | one-to-many | payments.order_id |
+| An order and its notifications | one-to-many | notifications.order_id, at most one per status |
 
 ## 4.5 Entity-relationship diagram
 

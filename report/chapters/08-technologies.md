@@ -56,7 +56,7 @@ The weakness of stateless tokens is that they can't be "un-issued": a stolen tok
 
 ## 7.4 MySQL, Hibernate and Flyway
 
-**MySQL** is an open-source relational database; InnoDB, its default storage engine, provides ACID transactions, row-level locking and multi-version concurrency control. The reservation strategies depend directly on InnoDB's behaviour: non-locking consistent reads for the precheck, `SELECT ... FOR UPDATE` locking reads [6], the locks taken by `UPDATE` statements [7], and deadlock detection [8]. DashCart uses MySQL 8.4, a long-term-support release, and its `CHECK` constraints and `JSON` column type.
+**MySQL** stores DashCart's tables and enforces their constraints. Its default storage engine, InnoDB, gives each transaction all-or-nothing behaviour (the ACID properties), locks individual rows rather than whole tables, and keeps older versions of rows so that plain reads never wait for writers. The reservation strategies depend directly on InnoDB's behaviour: non-locking consistent reads for the precheck, `SELECT ... FOR UPDATE` locking reads [6], the locks taken by `UPDATE` statements [7], and deadlock detection [8]. DashCart uses MySQL 8.4, a long-term-support release, and its `CHECK` constraints and `JSON` column type.
 
 **Hibernate ORM** [41], through Spring Data JPA, maps the entities to tables and generates simple queries from repository method names (`findByUserId`). For statements where the exact SQL matters, such as conditional stock updates, DashCart uses `JdbcTemplate` directly. **Flyway** [29] applies the numbered SQL migrations at start-up and records them in its own history table, so every environment, from a test container to RDS, has exactly the same schema.
 
@@ -64,7 +64,7 @@ The weakness of stateless tokens is that they can't be "un-issued": a stolen tok
 
 ## 7.5 Redis
 
-Redis is an in-memory data store. It keeps data in memory, executes commands one at a time on a single thread, and answers in well under a millisecond. Beyond strings it offers expiry on any key, atomic counters and server-side Lua scripts that run without interruption [9]. DashCart uses Redis in three ways, each relying on a different property:
+Redis keeps its whole dataset in RAM and processes commands one after another on a single thread, which is why a typical request is answered in well under a millisecond. Beyond strings it offers expiry on any key, atomic counters and server-side Lua scripts that run without interruption [9]. DashCart uses Redis in three ways, each relying on a different property:
 
 1. **Cache** for product listings: values with a 30-second time-to-live (Section 5.10).
 2. **Deny-list** for logged-out tokens: keys that expire on their own when the token would have.
