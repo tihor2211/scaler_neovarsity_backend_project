@@ -21,7 +21,7 @@ public class ReservationStrategies {
     private final RedisStockStore redisStock;
 
     public ReservationStrategies(List<StockReservationStrategy> strategies, RedisStockStore redisStock,
-            @Value("${dashcart.checkout.strategy:PESSIMISTIC}") ReservationStrategyType initial) {
+            @Value("${dashcart.checkout.strategy:CONDITIONAL_UPDATE}") ReservationStrategyType initial) {
         strategies.forEach(strategy -> byType.put(strategy.type(), strategy));
         this.redisStock = redisStock;
         this.active = new AtomicReference<>(initial);
