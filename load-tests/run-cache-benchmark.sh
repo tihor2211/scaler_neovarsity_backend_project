@@ -12,7 +12,7 @@ OUT_DIR=load-tests/results/cache-$(date +%Y%m%d-%H%M%S)
 mkdir -p "$OUT_DIR"
 
 for cache in none redis; do
-  CACHE_TYPE=$cache "$JAVA" -jar target/dashcart-0.0.1-SNAPSHOT.jar > "$OUT_DIR/app-$cache.log" 2>&1 &
+  CACHE_TYPE=$cache "$JAVA" -jar target/dashcart-0.0.1-SNAPSHOT.jar > /dev/null 2>&1 &
   app=$!
   curl -s -o /dev/null --retry 30 --retry-delay 2 --retry-connrefused http://localhost:8080/actuator/health
   # Warm-up so JIT compilation and connection-pool start-up aren't measured.

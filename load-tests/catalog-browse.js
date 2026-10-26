@@ -9,12 +9,13 @@ import { check } from 'k6';
 
 const BASE = __ENV.BASE_URL || 'http://localhost:8080';
 const LABEL = __ENV.LABEL || 'run';
+const VUS = parseInt(__ENV.VUS || '100', 10);
 
 export const options = {
     scenarios: {
         browse: {
             executor: 'constant-vus',
-            vus: parseInt(__ENV.VUS || '100', 10),
+            vus: VUS,
             duration: __ENV.DURATION || '30s',
         },
     },
@@ -37,7 +38,7 @@ export function handleSummary(data) {
     const t = m.http_req_duration.values;
     const result = {
         label: LABEL,
-        vus: options.scenarios.browse.vus,
+        vus: VUS,
         requests: m.http_reqs.values.count,
         requestsPerSec: m.http_reqs.values.rate,
         failedRate: m.http_req_failed.values.rate,
