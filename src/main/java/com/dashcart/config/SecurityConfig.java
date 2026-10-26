@@ -1,25 +1,62 @@
 package com.dashcart.config;
 
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-// Placeholder until the auth module adds JWT: health is public, everything else needs login.
+import com.dashcart.auth.JwtAuthenticationFilter;
+import com.dashcart.auth.JwtProperties;
+
+import jakarta.servlet.http.HttpServletResponse;
+
+// Stateless JWT security: no sessions, no CSRF (no cookies), every request carries its own token.
 @Configuration
+@EnableConfigurationProperties(JwtProperties.class)
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
-                .httpBasic(Customizer.withDefaults());
+                .exceptionHandling(errors -> errors
+                        .authenticationEntryPoint((request, response, ex) ->
+                                writeProblem(response, HttpStatus.UNAUTHORIZED, "Login required or token invalid"))
+                        .accessDeniedHandler((request, response, ex) ->
+                                writeProblem(response, HttpStatus.FORBIDDEN, "You don't have access to this resource")))
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    @Bean
+    PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    // Security errors happen before controllers run, so GlobalExceptionHandler can't format them.
+    private static void writeProblem(HttpServletResponse response, HttpStatus status, String detail)
+            throws java.io.IOException {
+        response.setStatus(status.value());
+        response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+        response.getWriter().write("""
+                {"type":"about:blank","title":"%s","status":%d,"detail":"%s"}"""
+                .formatted(status.getReasonPhrase(), status.value(), detail));
     }
 }

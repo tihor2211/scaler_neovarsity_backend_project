@@ -54,7 +54,7 @@ docker-compose.yml local MySQL + Redis
 ## Status
 
 - [x] Project skeleton, Docker Compose, database schema (Flyway V1)
-- [ ] Auth (register / login, JWT)
+- [x] Auth (register / login / logout, JWT with jjwt, Redis deny-list)
 - [ ] Stores and pincode lookup
 - [ ] Catalogue and per-store inventory
 - [ ] Cart
