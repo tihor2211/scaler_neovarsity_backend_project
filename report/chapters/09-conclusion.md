@@ -12,7 +12,17 @@ DashCart set out to build a quick-commerce backend that stays correct when many 
 
 ## 8.1 Key takeaways
 
-> <<Rohit: write this section in your own words, 4–6 short paragraphs or bullets on what you learned. Ideas you could reflect on: what surprised you about the naive strategy overselling every time; why a database row lock alone didn't prevent the lost update; why the "obvious" fix for the bottleneck (a bigger connection pool) was the wrong one; why the same change helped three strategies and hurt optimistic locking; what idempotency means in practice for payments and Kafka; what you learned about directing an AI coding assistant and reviewing its work.>>
+1. **Concurrency bugs hide until real load arrives.** The naive checkout looked correct, passed every single-user test and would have passed a manual demo. Only when hundreds of buyers checked out at the same moment did it sell five times the stock it had, and it did so in every run. I now treat "what happens if two requests do this at once?" as a normal design question, and I test it with real concurrent requests rather than by reasoning alone.
+
+2. **A lock is not the same as a correct check.** I expected MySQL's row lock to stop the lost update. It didn't: the second checkout simply waited for the first and then wrote the value it had computed from an old read. Correctness came from making the check and the change one atomic step, whether in a single conditional `UPDATE`, under a lock taken by the read itself, or inside a Redis script. The simplest of these was also the fastest.
+
+3. **Measure before optimising, and expect surprises.** My first idea for a faster checkout, a bigger connection pool, made it slower. Taking the stock lock last helped three strategies but made optimistic locking 20% slower. Without benchmarks I would have drawn the wrong conclusion both times.
+
+4. **Anything that can be repeated must be safe to repeat.** Razorpay can confirm the same payment twice and Kafka can deliver the same event twice. Unique keys on event ids, conditional status changes and treating "already done" as success turned these repeats into non-events instead of double charges or duplicate messages.
+
+5. **When something happens matters as much as what happens.** Sending an event, clearing a cache and calling an external service each had to happen at the right moment, after the commit or outside the transaction. Getting the timing wrong produced the subtle bugs in this project, such as a listing that still showed stock after it was set to zero.
+
+6. **An AI assistant speeds up the writing, not the thinking.** Claude Code produced code quickly, but deciding what to build, choosing between trade-offs and proving that the result works still depended on tests, measurements and a person who understands the system.
 
 ## 8.2 Practical applications
 
