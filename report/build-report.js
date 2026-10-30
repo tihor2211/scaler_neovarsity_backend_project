@@ -490,14 +490,28 @@ function declarationPage() {
             + 'citation. By making this declaration, I acknowledge that any violation of this statement '
             + 'constitutes academic misconduct. I understand that such misconduct may lead to expulsion from the '
             + 'program and/or disqualification from receiving the degree.')),
-        ...blank(4),
+        ...blank(3),
         new Paragraph({ children: t(meta.studentName) }),
+        ...signatureImage(),
         new Paragraph({
             tabStops: [{ type: TabStopType.RIGHT, position: TEXT_WIDTH }],
-            children: [...t('<<Signature of the Candidate>>'), new TextRun({ children: [new Tab()] }),
-                ...t(`Date: ${meta.declarationDate}`)],
+            children: [...t(signatureImage().length ? 'Signature of the Candidate' : '<<Signature of the Candidate>>'),
+                new TextRun({ children: [new Tab()] }), ...t(`Date: ${meta.declarationDate}`)],
         }),
     ];
+}
+
+// The candidate's signature, if assets/signature.png exists (kept out of git: it's personal).
+function signatureImage() {
+    const file = path.join(ROOT, 'assets', 'signature.png');
+    if (!fs.existsSync(file)) return [];
+    const img = pngSize(file);
+    const widthIn = 1.6;
+    return [new Paragraph({
+        spacing: { line: LINE_1, before: 120 },
+        children: [new ImageRun({ type: 'png', data: img.data,
+            transformation: { width: Math.round(widthIn * 96), height: Math.round(widthIn * 96 * img.height / img.width) } })],
+    })];
 }
 
 function acknowledgmentPage(blocks, refs) {
