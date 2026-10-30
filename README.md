@@ -109,6 +109,7 @@ src/main/java/com/dashcart/
   config/, common/ security, caching, error handling
 src/main/resources/db/migration/   Flyway SQL migrations (the schema lives here)
 load-tests/        k6 scripts, benchmark runners and committed results
+deploy/aws/        scripts that create, deploy to and delete the AWS environment
 report/            the applied project report: Markdown chapters, PlantUML diagrams, build scripts
 Dockerfile, docker-compose.yml
 ```
@@ -122,4 +123,4 @@ Dockerfile, docker-compose.yml
 - [x] Redis catalogue cache, Kafka order events and notifications
 - [x] Load tests and results
 - [x] Dockerfile and full-stack Docker Compose
-- [ ] AWS deployment
+- [x] AWS deployment (EC2, RDS, ElastiCache): scripts in `deploy/aws`
