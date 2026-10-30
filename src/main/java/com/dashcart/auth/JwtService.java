@@ -38,7 +38,8 @@ public class JwtService {
                 .id(UUID.randomUUID().toString())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
-                .signWith(key)
+                // Explicit, so a longer secret doesn't silently switch tokens to HS384/HS512.
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
         return new IssuedToken(token, expiresAt);
     }
