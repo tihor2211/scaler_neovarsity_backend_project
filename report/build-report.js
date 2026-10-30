@@ -8,7 +8,7 @@
 //
 // Markdown supported: # / ## / ### headings, paragraphs, - bullets (indent 2 for level 2), 1. numbered
 // lists, pipe tables, ``` code blocks, > notes, \newpage, **bold**, *italic*, `code`, [text](url),
-// <<placeholder>> (highlighted, for text still to be written).
+// <<placeholder>> (highlighted, for text still to be written), ==text== (highlighted, to be confirmed).
 //   Figure:   ![Caption](path.png){#fig:id width=6}
 //   Table:    Table: Caption {#tbl:id widths=20,80}   on the line before the table
 //   Listing:  Listing: Caption {#lst:id}               on the line before the code block
@@ -219,7 +219,7 @@ function resolveRefs(text, refs) {
 
 function runs(text, base = {}) {
     const out = [];
-    const re = /\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\)|<<(.+?)>>/g;
+    const re = /\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`|\[([^\]]+)\]\(([^)]+)\)|<<(.+?)>>|==(.+?)==/g;
     let last = 0;
     let m;
     const plain = (t, extra = {}) => t && out.push(new TextRun({ text: t, ...base, ...extra }));
@@ -230,6 +230,7 @@ function runs(text, base = {}) {
         else if (m[3] !== undefined) plain(m[3], { font: MONO, size: Math.round((base.size || BODY_SIZE) * 0.85) });
         else if (m[4] !== undefined) plain(m[4]);
         else if (m[6] !== undefined) plain(`<${m[6]}>`, { highlight: 'yellow' });
+        else if (m[7] !== undefined) plain(m[7], { highlight: 'yellow' });
         last = re.lastIndex;
     }
     plain(text.slice(last));
