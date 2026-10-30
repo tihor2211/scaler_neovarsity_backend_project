@@ -195,7 +195,7 @@ Unpaid orders are handled by `ReservationExpiryJob`, which runs every 30 seconds
 
 The project has two kinds of automated tests. **Integration tests** start the whole application against real MySQL 8.4, Redis 7.4 and Kafka 4 containers created by Testcontainers [30], wired in with Spring Boot's `@ServiceConnection` [16], and drive it through its HTTP API with MockMvc. This choice matters for this feature in particular: locking behaviour, `FOR UPDATE`, conditional updates and Lua scripts can only be tested against the real engines, and an in-memory database or mocks would pass tests that production would fail. **Unit tests** check individual classes with no Spring context and no containers. Collaborators are replaced with Mockito mocks where needed, so these tests run in milliseconds and pin down decisions that are hard to provoke end to end: the optimistic retry limit, the exact order of statements in the checkout transaction, and every branch of the webhook handler. @tbl:tests lists both.
 
-Table: Automated test suites {#tbl:tests widths=35,7,58 size=10}
+Table: Automated test suites {#tbl:tests widths=33,9,58 size=10}
 | Test class | Tests | What it proves |
 |---|---|---|
 | *Integration tests (real MySQL, Redis, Kafka)* | | |
