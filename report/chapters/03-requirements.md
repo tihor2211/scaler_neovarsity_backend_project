@@ -107,4 +107,4 @@ Table: Feature set by module {#tbl:features widths=17,58,25}
 - Prices are stored in rupees with two decimals; Razorpay amounts are sent in paise, as its API requires [22].
 - Razorpay is used in test mode. Refunds are flagged for manual handling rather than issued automatically.
 - Timestamps are stored in UTC.
-- The deployment has to fit the AWS free tier or a few dollars of credit, which rules out managed Kafka (Chapter 6).
+- The AWS deployment has to cost next to nothing, so it uses the smallest instance sizes, runs Kafka in a container instead of a managed service, and exists only while it is being verified (Chapter 6).

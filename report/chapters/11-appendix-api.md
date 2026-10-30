@@ -62,6 +62,12 @@ curl http://localhost:8080/actuator/health
 
 # Listing benchmark with the cache off and on (starts the app itself)
 ./mvnw -DskipTests package && ./load-tests/run-cache-benchmark.sh
+
+# AWS (Mumbai): create, deploy, check, delete. Needs the AWS CLI; billed while up.
+docker build -t dashcart:latest .
+./deploy/aws/up.sh && ./deploy/aws/deploy-app.sh
+./deploy/aws/status.sh
+./deploy/aws/down.sh
 ```
 
 Copy `.env.example` to `.env` to set the first administrator's e-mail and password, a JWT secret and Razorpay test keys. Without Razorpay keys a built-in fake gateway is used, so the whole flow, including payments, works offline.

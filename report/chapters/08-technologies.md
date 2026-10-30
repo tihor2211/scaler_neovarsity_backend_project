@@ -17,7 +17,7 @@ Table: Technology stack {#tbl:stack widths=26,22,52}
 | Observability | Spring Boot Actuator, Micrometer | (Spring Boot managed) |
 | Testing | JUnit 5, MockMvc, Testcontainers | |
 | Load testing | Grafana k6 | 2.3 |
-| Packaging and cloud | Docker, Docker Compose, AWS (EC2, VPC, RDS, ElastiCache, Elastic Beanstalk) | |
+| Packaging and cloud | Docker, Docker Compose, AWS (EC2, VPC, RDS, ElastiCache), AWS CLI | |
 | Tools | Maven, Git and GitHub, PlantUML, Claude Code | |
 
 ## 7.1 Java 21
@@ -110,7 +110,7 @@ k6 [31] is an open-source load-testing tool. Test scenarios are written in JavaS
 
 ## 7.11 Amazon Web Services
 
-AWS provides the infrastructure described in Chapter 6: EC2 virtual machines, a VPC network with security groups, RDS for managed MySQL, ElastiCache for managed Redis, and Elastic Beanstalk to deploy and operate the application. Managed services shift backups, patching and failover to the provider, which matters for a small team.
+AWS provides the infrastructure described in Chapter 6: an EC2 virtual machine, a VPC network with security groups, RDS for managed MySQL and ElastiCache for a managed Redis-compatible cache (Valkey). Scripts using the AWS CLI create the whole environment in about seven minutes and delete it just as completely. Elastic Beanstalk is the managed alternative for running the same containers long-term. Managed services shift backups, patching and failover to the provider, which matters for a small team.
 
 **Real-world use:** cloud platforms like AWS let a small team run the same kind of infrastructure as a large company, paying only for what it uses. AWS has regions in Mumbai and Hyderabad, which keep data and latency close to Indian users.
 

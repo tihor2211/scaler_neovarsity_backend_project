@@ -8,7 +8,7 @@ DashCart set out to build a quick-commerce backend that stays correct when many 
 - Two optimisations were measured before and after. Lock late cut the median checkout time of the locking strategies by 11–17% and, as a measured side effect, made optimistic locking 20% slower. The Redis listing cache raised listing throughput 6.9 times.
 - Payments are verified by signature, confirmed exactly once whether the browser or the webhook arrives first, and flagged for refund when they arrive after the reservation expired.
 - Order events flow through Kafka to an idempotent consumer, decoupled from checkout.
-- The application is packaged as a layered, non-root Docker image for deployment on AWS.
+- The application runs as a layered, non-root Docker image and was deployed on AWS: EC2, RDS MySQL and ElastiCache in a private VPC, live seven minutes after the first command, verified with real traffic and then deleted, for less than $0.06.
 
 ## 8.1 Key takeaways
 
@@ -45,7 +45,7 @@ The techniques in this project carry over directly to other domains:
 - *Search and refunds.* Product search uses `LIKE '%term%'`, which can't use an index and won't scale to a large catalogue. Refunds are flagged, not issued.
 - *Fairness under contention.* None of the strategies guarantees strict first-come, first-served. Under optimistic locking a buyer can lose five times in a row and be told to try again while stock remains.
 
-**Cost implications.** The deployment fits the AWS free tier or a few dollars of credit only because it avoids components with a fixed monthly cost: a load balancer, a NAT gateway, Multi-AZ databases and managed Kafka (MSK). A production deployment would need most of these, and managed Kafka would likely cost more than the rest of the infrastructure combined at this scale. A hosted Kafka-compatible service, or a simpler queue such as Amazon SQS for the notification use case, would be cheaper alternatives.
+**Cost implications.** Kept running, even the small deployment of Chapter 6 would cost about $42 a month, and it avoids every component with a fixed monthly cost: a load balancer, a NAT gateway, Multi-AZ databases and managed Kafka (MSK). A production deployment would need most of these, and managed Kafka would likely cost more than the rest of the infrastructure combined at this scale. A hosted Kafka-compatible service, or a simpler queue such as Amazon SQS for the notification use case, would be cheaper alternatives.
 
 ## 8.4 Future work
 

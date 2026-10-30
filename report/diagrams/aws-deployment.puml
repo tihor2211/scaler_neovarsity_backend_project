@@ -1,38 +1,34 @@
 @startuml aws-deployment
 !include style.iuml
-skinparam nodesep 30
-skinparam ranksep 45
+skinparam nodesep 28
+skinparam ranksep 42
 
 actor "Customers and\nstore admins" as users
 cloud "Razorpay" as rzp
-actor "Developer" as dev
+actor "Developer\n(deploy/aws scripts,\nAWS CLI, SSH)" as dev
 
-rectangle "AWS region ap-south-1 (Mumbai): planned" {
-  rectangle "VPC 10.0.0.0/16" {
+rectangle "AWS region ap-south-1 (Mumbai)" {
+  rectangle "VPC dashcart-vpc  10.20.0.0/16" {
     component "Internet gateway" as igw
-    rectangle "Public subnet" {
-      node "EC2 instance managed by Elastic Beanstalk\n(Docker on Amazon Linux 2023)\nsecurity group: dashcart-app-sg" as ec2 {
-        component "dashcart-app container\n(host port 80 → 8080)" as app
-        component "kafka container\n(KRaft, 9092)" as kafka
+    rectangle "Public subnet 10.20.1.0/24 (ap-south-1a)" {
+      node "EC2 t4g.small · Amazon Linux 2023 (arm64) · Docker\nsecurity group dashcart-app-sg" as ec2 {
+        component "dashcart-app container\nhost port 80 → 8080" as app
+        component "kafka container\n(KRaft, kafka:9092)" as kafka
       }
     }
-    rectangle "Private subnets (2 availability zones)" {
-      database "RDS MySQL 8.4\ndb.t4g.micro\nsg: dashcart-db-sg" as rds
-      database "ElastiCache Redis\ncache.t4g.micro\nsg: dashcart-cache-sg" as redis
+    rectangle "Private subnets 10.20.11.0/24 (1a), 10.20.12.0/24 (1b): no internet route" {
+      database "RDS MySQL 8.4\ndb.t4g.micro, 20 GB gp3\nsg: dashcart-db-sg" as rds
+      database "ElastiCache Valkey 9.1\ncache.t4g.micro\nsg: dashcart-cache-sg" as cache
     }
   }
-  component "Elastic Beanstalk\n(deploys app versions,\nhealth checks, logs)" as eb
-  database "S3\n(application bundles)" as s3
 }
 
-users --> igw : HTTP(S)
+users --> igw : HTTP :80
 rzp --> igw : webhooks
 igw --> app
 app --> kafka
 app --> rds : 3306, only from\ndashcart-app-sg
-app --> redis : 6379, only from\ndashcart-app-sg
+app --> cache : 6379, only from\ndashcart-app-sg
 app --> rzp : Orders API (HTTPS)
-dev --> eb : eb deploy
-eb --> s3
-eb ..> ec2 : provisions,\nmonitors
+dev --> ec2 : SSH :22 from the developer's IP\n(image copied with docker save | load)
 @enduml

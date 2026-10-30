@@ -15,7 +15,7 @@ PROFILE="file://$PWD/build/lo-profile"   # separate LibreOffice profile, so an o
 mkdir -p build/diagrams build/charts
 echo "Diagrams..."
 "$JAVA" -Djava.awt.headless=true -jar tools/plantuml.jar -tpng -o "$PWD/build/diagrams" diagrams/*.puml
-tools/venv/bin/python rotate.py build/diagrams/er-diagram.png
+tools/venv/bin/python rotate.py build/diagrams/er-diagram.png build/diagrams/aws-deployment.png
 echo "Charts..."
 tools/venv/bin/python charts.py build/charts
 
