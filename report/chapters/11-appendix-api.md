@@ -54,7 +54,7 @@ The source code is at https://github.com/tihor2211/scaler_neovarsity_backend_pro
 docker compose --profile app up -d --build
 curl http://localhost:8080/actuator/health
 
-# Tests: start their own containers, 39 tests
+# Tests (76) and coverage report: target/site/jacoco/index.html
 ./mvnw verify
 
 # Flash-sale rush against every strategy (app running, admin credentials set)

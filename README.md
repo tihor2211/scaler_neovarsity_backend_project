@@ -64,11 +64,13 @@ docker compose up -d                                  # MySQL 3306, Redis 6379, 
 ADMIN_EMAIL=admin@dashcart.local ADMIN_PASSWORD=change-me ./mvnw spring-boot:run
 ```
 
-**Tests** start their own MySQL, Redis and Kafka containers (39 tests, including a concurrency test
-that runs 40 buyers against 15 units with every strategy):
+**Tests:** 76 in total. 39 integration tests start their own MySQL, Redis and Kafka containers,
+including a concurrency test that runs 40 buyers against 15 units with every strategy. 37 unit tests
+need no containers. `verify` also writes a JaCoCo coverage report (90.5% of lines, 72.8% of branches)
+and fails the build if coverage drops below 85% of lines or 65% of branches:
 
 ```bash
-./mvnw verify
+./mvnw verify                      # report: target/site/jacoco/index.html
 ```
 
 **Load tests** need [k6](https://k6.io): see the scripts in [`load-tests`](load-tests).

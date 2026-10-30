@@ -193,11 +193,12 @@ Unpaid orders are handled by `ReservationExpiryJob`, which runs every 30 seconds
 
 ## 5.7 Testing
 
-The tests are integration tests: each one starts the whole application against real MySQL 8.4, Redis 7.4 and Kafka 4 containers created by Testcontainers [30], wired in with Spring Boot's `@ServiceConnection` [16], and drives it through its HTTP API with MockMvc. This choice matters for this feature in particular. Locking behaviour, `FOR UPDATE`, conditional updates and Lua scripts can only be tested against the real engines; an in-memory database or mocks would pass tests that production would fail.
+The project has two kinds of automated tests. **Integration tests** start the whole application against real MySQL 8.4, Redis 7.4 and Kafka 4 containers created by Testcontainers [30], wired in with Spring Boot's `@ServiceConnection` [16], and drive it through its HTTP API with MockMvc. This choice matters for this feature in particular: locking behaviour, `FOR UPDATE`, conditional updates and Lua scripts can only be tested against the real engines, and an in-memory database or mocks would pass tests that production would fail. **Unit tests** check individual classes with no Spring context and no containers. Collaborators are replaced with Mockito mocks where needed, so these tests run in milliseconds and pin down decisions that are hard to provoke end to end: the optimistic retry limit, the exact order of statements in the checkout transaction, and every branch of the webhook handler. @tbl:tests lists both.
 
 Table: Automated test suites {#tbl:tests widths=35,7,58 size=10}
 | Test class | Tests | What it proves |
 |---|---|---|
+| *Integration tests (real MySQL, Redis, Kafka)* | | |
 | AuthFlowIntegrationTest | 6 | Register, login, profile, logout invalidates the token; duplicate e-mail; wrong password; field-level validation errors; admin-only paths |
 | BrowseIntegrationTest | 6 | Pincode lookup without login; invalid and unserved pincodes; listing filters; a stock change clears the cached listing; price above MRP rejected |
 | CartIntegrationTest | 5 | Add, update and remove with totals; stock and per-item limits; one store per cart; login required |
@@ -206,11 +207,30 @@ Table: Automated test suites {#tbl:tests widths=35,7,58 size=10}
 | PaymentIntegrationTest | 7 | Razorpay order for the right amount; verified payment sells the stock; forged signatures rejected; repeated webhook changes nothing; payment after expiry flagged for refund; can't pay another customer's order |
 | NotificationIntegrationTest | 2 | Placing and cancelling an order produce two notifications through Kafka; every status has a message |
 | DashcartApplicationTests | 1 | The application context starts |
+| *Unit tests (no containers)* | | |
+| CheckoutServiceTest | 6 | Optimistic conflicts retried in a new transaction, 409 after five attempts; other strategies never retry; out of stock is not retried; a wrong pincode is rejected before any stock work; precheck, order rows, cart delete, reserve and event happen in that order, with items in product-id order |
+| PaymentWebhookTest | 8 | Forged signature rejected before anything is read; missing event id and malformed body rejected; capture pays the order; a repeated event id changes nothing; an already captured payment is left alone; late payment flagged for refund; failed payment recorded |
+| RazorpayGatewayTest | 2 | The Orders API call (path, Basic authentication, amount in paise) against a local stand-in server; fake order ids without keys |
+| JwtServiceTest | 7 | Token round trip; HS256 whatever the key length; unique token ids; forged payload, wrong secret, expired and malformed tokens rejected |
+| SignaturesTest | 4 | The published HMAC-SHA256 example value; only the exact body and secret match; Razorpay's order_id\|payment_id format |
+| OrderStatusTest | 7 | Fulfilment steps; which statuses hold stock |
+| StockKeysAndOrderingTest | 3 | Redis keys use the store as a cluster hash tag; lock order by product id; out-of-stock message |
 
-All 39 tests pass. The concurrency test starts 40 threads that wait on a shared latch and are released at the same instant. For the four safe strategies it asserts that no more than 15 units were sold and that available plus reserved stock still adds up to 15. For NAIVE it only records what happened; in one run all 40 buyers got an order for the 15 units. The tests also caught two real bugs during development:
+All 76 tests pass: 39 integration tests and 37 unit tests. The concurrency test starts 40 threads that wait on a shared latch and are released at the same instant. For the four safe strategies it asserts that no more than 15 units were sold and that available plus reserved stock still adds up to 15. For NAIVE it only records what happened; in one run all 40 buyers got an order for the 15 units. The tests also caught three real bugs during development:
 
 1. **A payment status that was never saved.** The order transition is a bulk JPQL `UPDATE` with `clearAutomatically = true`, which empties the persistence context so later reads see the new status. That also detached the `Payment` entity loaded earlier in the same transaction, so its change to CAPTURED was silently dropped. The payment test asserted the status in the database, failed, and the fix was an explicit save.
 2. **A cache that was cleared too late.** This is described in Section 5.10.
+3. **Tokens signed with the wrong algorithm.** jjwt chooses the HMAC algorithm from the length of the key, so the 384-bit secret recommended for production would have produced HS384 tokens, not the HS256 this report describes. A unit test that decodes the token header failed with a long key; the fix names HS256 explicitly when signing.
+
+**Code coverage.** JaCoCo measures which lines and branches the whole suite executes. @tbl:coverage shows the result. The build is set to fail if line coverage drops below 85% or branch coverage below 65%, so coverage can't quietly erode. Most of the remaining gaps are defensive branches, such as a Redis key that disappears in the middle of a reservation, and simple getters.
+
+Table: Code coverage of the test suite (JaCoCo) {#tbl:coverage widths=40,30,30}
+| Measure | Covered | Coverage |
+|---|---|---|
+| Lines | 1,015 of 1,121 | 90.5% |
+| Instructions | 5,269 of 5,787 | 91.0% |
+| Methods | 383 of 424 | 90.3% |
+| Branches | 174 of 239 | 72.8% |
 
 ## 5.8 Benchmark design
 

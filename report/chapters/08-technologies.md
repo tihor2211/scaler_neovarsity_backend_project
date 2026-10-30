@@ -96,7 +96,9 @@ Docker packages an application with everything it needs to run into an **image**
 
 ## 7.9 Testcontainers and JUnit
 
-Testcontainers [30] is a library that starts real services in Docker containers from test code and removes them afterwards. DashCart's 39 JUnit tests use it to run against MySQL 8.4, Redis 7.4 and Kafka 4.3, the same versions as production, so that locking behaviour, SQL dialect, Lua scripts and Kafka delivery are all tested for real. Spring Boot's `@ServiceConnection` [16] points the application at the containers automatically.
+Testcontainers [30] is a library that starts real services in Docker containers from test code and removes them afterwards. DashCart's 39 integration tests use it to run against MySQL 8.4, Redis 7.4 and Kafka 4.3, the same versions as production, so that locking behaviour, SQL dialect, Lua scripts and Kafka delivery are all tested for real. Spring Boot's `@ServiceConnection` [16] points the application at the containers automatically.
+
+Another 37 unit tests use JUnit and Mockito without any containers, and JaCoCo reports the coverage of the whole suite (Section 5.7).
 
 **Real-world use:** Testcontainers is used by teams that need integration tests to reflect production, especially where an in-memory substitute such as H2 would behave differently from the real database.
 

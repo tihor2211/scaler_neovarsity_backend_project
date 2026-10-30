@@ -2,7 +2,7 @@
 
 DashCart set out to build a quick-commerce backend that stays correct when many customers compete for the same stock, and to show it with measurements rather than assertions. The objectives of Section 1.3 were met as follows:
 
-- A complete backend covers accounts, stores and pincodes, a per-store catalogue and inventory, carts, checkout, Razorpay payments, the order lifecycle and notifications: 33 endpoints, 13 tables and 39 integration tests against real MySQL, Redis and Kafka.
+- A complete backend covers accounts, stores and pincodes, a per-store catalogue and inventory, carts, checkout, Razorpay payments, the order lifecycle and notifications: 33 endpoints, 13 tables and 76 automated tests (39 integration tests against real MySQL, Redis and Kafka, and 37 unit tests) with 90% line coverage.
 - Checkout never oversells with any of the four safe strategies. In every run of a 500-buyer rush on 100 units they sold exactly 100, while the naive baseline sold 500.
 - Five concurrency-control techniques were compared under identical load. The conditional `UPDATE` was the fastest correct strategy and became the default.
 - Two optimisations were measured before and after. Lock late cut the median checkout time of the locking strategies by 11–17% and, as a measured side effect, made optimistic locking 20% slower. The Redis listing cache raised listing throughput 6.9 times.
