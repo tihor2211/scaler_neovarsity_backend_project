@@ -78,7 +78,7 @@ Table: Development iterations {#tbl:iterations widths=8,32,60}
 
 Three practices ran through every iteration. **Tests against real infrastructure:** the integration tests start real MySQL, Redis and Kafka containers with Testcontainers [30], so they exercise the same SQL, locking and serialisation as production. **Measure before optimising:** every performance claim in this report comes from a load test whose raw output is committed in the repository (`load-tests/results`). **Schema as code:** the database schema exists only as versioned Flyway migrations [29].
 
-**Use of AI assistance.** I built this project with an AI coding assistant, Claude Code by Anthropic [1], working as a pair programmer under my direction. I chose the problem, the scope, the technology stack and the trade-offs to investigate, and I reviewed the results. Claude Code generated most of the source code, the tests, the load-test scripts and the diagrams, ran the benchmarks, and produced the first draft of this report, which I then revised. This is how much software is now written in industry: an engineer directs and reviews while an AI assistant writes much of the code. All results reported here come from tests and benchmarks run on the code in the repository.
+**Use of AI assistance.** I used Claude Code (Anthropic) [1] as an AI pair programmer throughout this project. Working from my choice of problem, scope and technologies, it generated most of the implementation, tests and diagrams and a first draft of this report. I directed the work, reviewed it, and am responsible for this submission.
 
 ## 1.7 Relevance
 
